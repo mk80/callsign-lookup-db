@@ -71,6 +71,21 @@ def verifyCallsignTable(callsignQ):
 		returnVal = True
 	return returnVal
 
+# create callsign table and columns
+def addCallsign(callsignQ):
+	returnVal = False
+	returnVal = verifyCallsignTable(callsignQ)
+
+	if ( returnVal == False ):
+		insertStmt = 
+
+
+# store contact info into callsign table
+def storeContact(name, timestamp, band, comment):
+
+# retrieve callsign info
+def retrieveContact(callsignQ):
+
 ## print json function
 def outputPrint(data):
 	for k, v in data.items():
