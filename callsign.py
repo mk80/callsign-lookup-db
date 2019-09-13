@@ -62,11 +62,12 @@ def readRecord(queryStmt):
 def verifyCallsignTable(callsignQ):
 	returnVal = False
 	queryStmt = None
+	queryStmt = "SELECT name FROM callsign WHERE name = '%s'" % (callsignQ)
 
-	queryStmt = """SELECT name
-		FROM callsign
-		WHERE name = '%s'
-		""" % (callsignQ)
+	#queryStmt = """SELECT name FROM callsign
+	#	WHERE name = '%s'
+	#	""" % (callsignQ)
+	print(queryStmt)
 	if (readRecord(queryStmt)):
 		returnVal = True
 	return returnVal
@@ -105,7 +106,8 @@ def retrieveContact(callsignQ):
 	# check for table
 	returnVal = verifyCallsignTable(callsignQ)
 	if ( returnVal == True ):
-		queryStmt = """SELECT * FROM %s """ % (callsignQ)
+		queryStmt = """SELECT * FROM %s """ % ("callsign." + callsignQ)
+		print(queryStmt)
 		returnVal = readRecord(queryStmt)
 		return returnVal
 	else:
@@ -195,7 +197,7 @@ if ( __name__ == "__main__"):
 					commentQ = input("Comments: ")
 				elif (inputContact not in negInput):
 					print('Please enter y/n\n')
-
+			'''
 			if (inputContact in affInput):
 				returnVal = None
 				returnVal = addCallsign(callsignQ)
@@ -203,21 +205,22 @@ if ( __name__ == "__main__"):
 					returnVal = storeContact(callsignQ, nameQ, timestampQ, bandQ, commentQ)
 					if ( returnVal == None ):
 						print("Contact successfully added!\n")
-						
+			'''
 
 
-			#print(callsignQ)
-			#print(nameQ)
-			#print(timestampQ)
-			#print(bandQ)
-			#print(commentQ)
+			print(callsignQ)
+			print(nameQ)
+			print(timestampQ)
+			print(bandQ)
+			print(commentQ)
 
 			# unit test db connection and write/read
-			#writeRecord("CREATE TABLE callsign.test (coltest varchar(20));")
-			#writeRecord("INSERT into callsign.test (coltest) values ('It works!');")
-			#dbtest = readRecord("SELECT * FROM callsign.test;")
-			#print('dbtest = ' + str(dbtest))
-			#writeRecord("DROP TABLE callsign.test;")
+			writeRecord("CREATE TABLE callsign.test (coltest varchar(20));")
+			writeRecord("INSERT into callsign.test (coltest) values ('It works!');")
+			dbtest = readRecord("SELECT * FROM callsign.test;")
+			print('dbtest = ' + str(dbtest))
+			contTest = input("Continue: y/n")
+			writeRecord("DROP TABLE callsign.test;")
 			
 		else:
 			# exit message
