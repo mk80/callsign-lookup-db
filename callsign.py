@@ -49,6 +49,14 @@ def readRecord(queryStmt):
     if (conn):
         try:
             cur = conn.cursor()
+#            try:
+#                returnVal = cur.execute(queryStmt)
+#            except psycopg2.errors.UndefinedTable as err:
+#                if err:
+#                    returnVal = False
+#                    return False
+#                else:
+#                    returnVal = cur.fetchall()
             returnVal = cur.execute(queryStmt)
             returnVal = cur.fetchall()
             cur.close()
@@ -67,7 +75,6 @@ def verifyCallsignTable(callsignQ):
 	#queryStmt = """SELECT name FROM callsign
 	#	WHERE name = '%s'
 	#	""" % (callsignQ)
-	print(queryStmt)
 	if (readRecord(queryStmt)):
 		returnVal = True
 	return returnVal
@@ -83,6 +90,9 @@ def addCallsign(callsignQ):
 	if ( returnVal == False ):
 		tableName = "callsign." + callsignQ
 		createStmt = "CREATE TABLE " + tableName + " (colname varchar(50), coltimestamp varchar(30), colband varchar(3), colcomment varchar(255));"
+		# maybe switch to this below with no 'col' on the names of columns
+		#createStmt = "CREATE TABLE " + tableName + " (name varchar(50), timestamp varchar(30), band varchar(3), comment varchar(255));"
+		print(createStmt)
 		returnVal = writeRecord(createStmt)
 	return returnVal
 
@@ -157,7 +167,7 @@ if ( __name__ == "__main__"):
 		print('\n')
 
 		# move on to exit if callsign == '0'
-		if (callsign != '0'):
+		if (callsign != '0' and callsign != 'test'):
 			# build request url for api to callook.info
 			apiGet =  'https://callook.info/' + callsign + '/json'
 
@@ -197,23 +207,23 @@ if ( __name__ == "__main__"):
 					commentQ = input("Comments: ")
 				elif (inputContact not in negInput):
 					print('Please enter y/n\n')
-			'''
-			if (inputContact in affInput):
-				returnVal = None
-				returnVal = addCallsign(callsignQ)
-				if ( returnVal == None ):
-					returnVal = storeContact(callsignQ, nameQ, timestampQ, bandQ, commentQ)
+			
+				if (inputContact in affInput):
+					returnVal = None
+					returnVal = addCallsign(callsignQ)
 					if ( returnVal == None ):
-						print("Contact successfully added!\n")
+						returnVal = storeContact(callsignQ, nameQ, timestampQ, bandQ, commentQ)
+						if ( returnVal == None ):
+							print("Contact successfully added!\n")
+
+
+
+			#print(callsignQ)
+			#print(nameQ)
+			#print(timestampQ)
+			#print(bandQ)
+			#print(commentQ)
 			'''
-
-
-			print(callsignQ)
-			print(nameQ)
-			print(timestampQ)
-			print(bandQ)
-			print(commentQ)
-
 			# unit test db connection and write/read
 			writeRecord("CREATE TABLE callsign.test (coltest varchar(20));")
 			writeRecord("INSERT into callsign.test (coltest) values ('It works!');")
@@ -221,7 +231,24 @@ if ( __name__ == "__main__"):
 			print('dbtest = ' + str(dbtest))
 			contTest = input("Continue: y/n")
 			writeRecord("DROP TABLE callsign.test;")
+            '''
+		elif (callsign == 'test'):
+			callsignQ = 'km6vom'
+			nameQ = 'michael'
+			timestampQ = '12:34'
+			bandQ = 'HF'
+			commentQ = 'test test test'
+
+			print(readRecord("select * from callsign.ai6ue"))
 			
+			# unit test db connection and write/read
+			writeRecord("CREATE TABLE callsign.test (coltest varchar(20));")
+			writeRecord("INSERT into callsign.test (coltest) values ('It works!');")
+			dbtest = readRecord("SELECT * FROM callsign.test;")
+			print('dbtest = ' + str(dbtest))
+			contTest = input("Continue: y/n")
+			writeRecord("DROP TABLE callsign.test;")
+
 		else:
 			# exit message
 			print('exit')
