@@ -51,23 +51,23 @@ def readRecord(queryStmt):
     returnVal = None
     conn = connectToDatabase()
     if (conn):
+        #try:
+        cur = conn.cursor()
         try:
-            cur = conn.cursor()
-            try:
-                returnVal = cur.execute(queryStmt)
-			# except for undefined table
-            except psycopg2.Error as err:
-                if err:
-                    returnVal = False
-                    print("No contact stored with this callsign.\n")
-                    return False
-            returnVal = cur.fetchall()
-            cur.close()
-            conn.close()
+            returnVal = cur.execute(queryStmt)
+		# except for undefined table
+        except psycopg2.Error as err:
+            if err:
+                returnVal = False
+                print("No contact stored with this callsign.\n")
+                return False
+        returnVal = cur.fetchall()
+        cur.close()
+        conn.close()
 		# except for db error
-        except psycopg2.Error as e:
-            e = sys.exc_info()[0]
-            sys.stderr.write("callsign.readRecord Error: %s\n" % e.diag.message_primary)
+        #except psycopg2.Error as e:
+        #    e = sys.exc_info()[0]
+        #    sys.stderr.write("callsign.readRecord Error: %s\n" % e.diag.message_primary)
     return returnVal
 
 # verify table for callsign
@@ -92,7 +92,8 @@ def addCallsign(callsignQ):
 	# create table for callsign if it doesn't exist
 	if ( returnVal == False ):
 		tableName = "callsign." + callsignQ
-		createStmt = "CREATE TABLE " + tableName + " (colname varchar(50), coltimestamp varchar(30), colband varchar(3), colcomment varchar(255));"
+		createStmt = """CREATE TABLE %s 
+						(colname varchar(50), coltimestamp varchar(30), colband varchar(3), colcomment varchar(255)) """ % (tableName)
 		# maybe switch to this below with no 'col' on the names of columns
 		#createStmt = "CREATE TABLE " + tableName + " (name varchar(50), timestamp varchar(30), band varchar(3), comment varchar(255));"
 		returnVal = writeRecord(createStmt)
@@ -133,7 +134,7 @@ def removeContact(callsignQ):
 	returnVal = verifyCallsignTable(callsignQ)
 	if ( returnVal != False):
 		tableName = "callsign." + callsignQ
-		dropStmt = """DROP TABLE %s""" % (tableName)
+		dropStmt = """DROP TABLE %s """ % (tableName)
 		returnVal = writeRecord(dropStmt)
 		return returnVal
 	else:
@@ -184,7 +185,6 @@ if ( __name__ == "__main__"):
 			
 			callsignQ = output['current']['callsign']
 			returnVal = retrieveContact(callsignQ)
-			print(returnVal)
 
 			# display previously stored contact info
 			if ( returnVal != False ):
@@ -220,7 +220,6 @@ if ( __name__ == "__main__"):
 				if (inputContact in affInput):
 					returnVal = None
 					returnVal = addCallsign(callsignQ)
-					print(returnVal)
 					if ( returnVal == True or returnVal == None):
 						returnVal = storeContact(callsignQ, nameQ, timestampQ, bandQ, commentQ)
 						if ( returnVal == None ):
