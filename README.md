@@ -1,5 +1,5 @@
 # callsign-lookup-db
-fcc callsign lookup with database info collection...store name, band, date and comments on each contact
+fcc callsign lookup with database info collection...store name, date, band, and comments on each contact
 
 # postgresql schema setup
 create database callsign;

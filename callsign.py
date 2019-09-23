@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 
+# program to lookup FCC callsigns from https://callook.info
+# and also store contact info into database to keep track
+# of each contact made with that callsign
+
 import requests
 import json
 import sys
@@ -49,18 +53,18 @@ def readRecord(queryStmt):
     if (conn):
         try:
             cur = conn.cursor()
-#            try:
-#                returnVal = cur.execute(queryStmt)
-#            except psycopg2.errors.UndefinedTable as err:
-#                if err:
-#                    returnVal = False
-#                    return False
-#                else:
-#                    returnVal = cur.fetchall()
-            returnVal = cur.execute(queryStmt)
+            try:
+                returnVal = cur.execute(queryStmt)
+			# except for undefined table
+            except psycopg2.Error as err:
+                if err:
+                    returnVal = False
+                    print("No contact stored with this callsign.\n")
+                    return False
             returnVal = cur.fetchall()
             cur.close()
             conn.close()
+		# except for db error
         except psycopg2.Error as e:
             e = sys.exc_info()[0]
             sys.stderr.write("callsign.readRecord Error: %s\n" % e.diag.message_primary)
@@ -70,12 +74,10 @@ def readRecord(queryStmt):
 def verifyCallsignTable(callsignQ):
 	returnVal = False
 	queryStmt = None
-	queryStmt = "SELECT name FROM callsign WHERE name = '%s'" % (callsignQ)
-
-	#queryStmt = """SELECT name FROM callsign
-	#	WHERE name = '%s'
-	#	""" % (callsignQ)
-	if (readRecord(queryStmt)):
+	queryStmt = """SELECT * FROM %s """ % ("callsign." + callsignQ)
+	#returnVal = readRecord(queryStmt)
+	#print(returnVal)
+	if (readRecord(queryStmt) != False):
 		returnVal = True
 	return returnVal
 
@@ -86,13 +88,13 @@ def addCallsign(callsignQ):
 	createStmt = None
 	# check for table
 	returnVal = verifyCallsignTable(callsignQ)
+	print(returnVal)
 	# create table for callsign if it doesn't exist
 	if ( returnVal == False ):
 		tableName = "callsign." + callsignQ
 		createStmt = "CREATE TABLE " + tableName + " (colname varchar(50), coltimestamp varchar(30), colband varchar(3), colcomment varchar(255));"
 		# maybe switch to this below with no 'col' on the names of columns
 		#createStmt = "CREATE TABLE " + tableName + " (name varchar(50), timestamp varchar(30), band varchar(3), comment varchar(255));"
-		print(createStmt)
 		returnVal = writeRecord(createStmt)
 	return returnVal
 
@@ -117,7 +119,6 @@ def retrieveContact(callsignQ):
 	returnVal = verifyCallsignTable(callsignQ)
 	if ( returnVal == True ):
 		queryStmt = """SELECT * FROM %s """ % ("callsign." + callsignQ)
-		print(queryStmt)
 		returnVal = readRecord(queryStmt)
 		return returnVal
 	else:
@@ -130,7 +131,7 @@ def removeContact(callsignQ):
 	dropStmt = None
 	# check for table
 	returnVal = verifyCallsignTable(callsignQ)
-	if ( returnVal == True ):
+	if ( returnVal != False):
 		tableName = "callsign." + callsignQ
 		dropStmt = """DROP TABLE %s""" % (tableName)
 		returnVal = writeRecord(dropStmt)
@@ -138,7 +139,7 @@ def removeContact(callsignQ):
 	else:
 		return returnVal
 
-## print json function
+# print json function
 def outputPrint(data):
 	for k, v in data.items():
 		if isinstance (v, dict):
@@ -157,8 +158,9 @@ if ( __name__ == "__main__"):
 
 	callsign = 'run'
 	returnVal = None
+	doublecheck = ''
 
-	print("\n Enter an FCC callsign to lookup or 0 to exit.\n\n")
+	print("\n Enter an FCC callsign to lookup\n or 'remove' to remove contact from db\n or 0 to exit\n\n")
 
 	## run loop
 	while (callsign != '0'):
@@ -167,7 +169,7 @@ if ( __name__ == "__main__"):
 		print('\n')
 
 		# move on to exit if callsign == '0'
-		if (callsign != '0' and callsign != 'test'):
+		if (callsign != '0' and callsign != 'test' and callsign != 'remove'):
 			# build request url for api to callook.info
 			apiGet =  'https://callook.info/' + callsign + '/json'
 
@@ -182,14 +184,21 @@ if ( __name__ == "__main__"):
 			
 			callsignQ = output['current']['callsign']
 			returnVal = retrieveContact(callsignQ)
+			print(returnVal)
+
+			# display previously stored contact info
 			if ( returnVal != False ):
 				print("Past contact with " + callsignQ + ":\n")
-				print(returnVal)
+				print("{:30}{:28}{:10}{:100}".format("Name", "Date/Time", "Band", "Comment"))
+				for i in range(len(returnVal)):
+					print("{:30}{:28}{:10}{:100}".format(returnVal[i][0], returnVal[i][1], returnVal[i][2], returnVal[i][3]))
+				print('\n')
 
 			inputContact = 'q'
 
+			# store new contact info
 			while (inputContact not in affInput and inputContact not in negInput):
-				inputContact = input("Would you like to record this contact? ")
+				inputContact = input("Would you like to record this new contact? ")
 				print('\n')
 
 				if (inputContact in affInput):
@@ -211,36 +220,28 @@ if ( __name__ == "__main__"):
 				if (inputContact in affInput):
 					returnVal = None
 					returnVal = addCallsign(callsignQ)
-					if ( returnVal == None ):
+					print(returnVal)
+					if ( returnVal == True or returnVal == None):
 						returnVal = storeContact(callsignQ, nameQ, timestampQ, bandQ, commentQ)
 						if ( returnVal == None ):
 							print("Contact successfully added!\n")
 
+		# remove contact info from db
+		elif (callsign == 'remove'):
+			callsign = input("Callsign to remove: ")
+			doublecheck = 'q'
+			while (doublecheck not in affInput and doublecheck not in negInput):
+				doublecheck = input("Are you sure you want to remove " + callsign + " and all of it's entries? ")
+				print('\n')
+				if (doublecheck in affInput):
+					returnVal = removeContact(callsign)
+					if (returnVal == True):
+						print("\nContact removed successfully from database!\n")
+				elif (doublecheck not in negInput):
+					print('Please enter y/n\n')
 
-
-			#print(callsignQ)
-			#print(nameQ)
-			#print(timestampQ)
-			#print(bandQ)
-			#print(commentQ)
-			'''
-			# unit test db connection and write/read
-			writeRecord("CREATE TABLE callsign.test (coltest varchar(20));")
-			writeRecord("INSERT into callsign.test (coltest) values ('It works!');")
-			dbtest = readRecord("SELECT * FROM callsign.test;")
-			print('dbtest = ' + str(dbtest))
-			contTest = input("Continue: y/n")
-			writeRecord("DROP TABLE callsign.test;")
-            '''
+		# unit test for db interaction
 		elif (callsign == 'test'):
-			callsignQ = 'km6vom'
-			nameQ = 'michael'
-			timestampQ = '12:34'
-			bandQ = 'HF'
-			commentQ = 'test test test'
-
-			print(readRecord("select * from callsign.ai6ue"))
-			
 			# unit test db connection and write/read
 			writeRecord("CREATE TABLE callsign.test (coltest varchar(20));")
 			writeRecord("INSERT into callsign.test (coltest) values ('It works!');")
