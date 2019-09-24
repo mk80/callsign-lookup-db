@@ -51,7 +51,6 @@ def readRecord(queryStmt):
     returnVal = None
     conn = connectToDatabase()
     if (conn):
-        #try:
         cur = conn.cursor()
         try:
             returnVal = cur.execute(queryStmt)
@@ -64,10 +63,6 @@ def readRecord(queryStmt):
         returnVal = cur.fetchall()
         cur.close()
         conn.close()
-		# except for db error
-        #except psycopg2.Error as e:
-        #    e = sys.exc_info()[0]
-        #    sys.stderr.write("callsign.readRecord Error: %s\n" % e.diag.message_primary)
     return returnVal
 
 # verify table for callsign
@@ -75,8 +70,6 @@ def verifyCallsignTable(callsignQ):
 	returnVal = False
 	queryStmt = None
 	queryStmt = """SELECT * FROM %s """ % ("callsign." + callsignQ)
-	#returnVal = readRecord(queryStmt)
-	#print(returnVal)
 	if (readRecord(queryStmt) != False):
 		returnVal = True
 	return returnVal
@@ -88,7 +81,6 @@ def addCallsign(callsignQ):
 	createStmt = None
 	# check for table
 	returnVal = verifyCallsignTable(callsignQ)
-	print(returnVal)
 	# create table for callsign if it doesn't exist
 	if ( returnVal == False ):
 		tableName = "callsign." + callsignQ
@@ -230,12 +222,12 @@ if ( __name__ == "__main__"):
 			callsign = input("Callsign to remove: ")
 			doublecheck = 'q'
 			while (doublecheck not in affInput and doublecheck not in negInput):
-				doublecheck = input("Are you sure you want to remove " + callsign + " and all of it's entries? ")
+				doublecheck = input("\nAre you sure you want to remove " + callsign + " and all of it's entries? ")
 				print('\n')
 				if (doublecheck in affInput):
 					returnVal = removeContact(callsign)
-					if (returnVal == True):
-						print("\nContact removed successfully from database!\n")
+					if (returnVal == None):
+						print("Contact removed successfully from database!\n")
 				elif (doublecheck not in negInput):
 					print('Please enter y/n\n')
 
