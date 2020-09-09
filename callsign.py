@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 # program to lookup FCC callsigns from https://callook.info
 # and also store contact info into database to keep track
 # of each contact made with that callsign
