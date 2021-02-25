@@ -13,3 +13,6 @@ create user callsign password 'callsign';
 grant all on schema callsign to callsign;
 
 grant all on all tables in schema callsign to callsign;
+
+# new features to add
+show all callsign tables
